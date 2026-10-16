@@ -742,7 +742,7 @@
   "quake.time.h_ago": "{hours} h ago",
   "quake.time.d_ago": "{days} d ago",
   "quake.tsunami": "Tsunami bulletin issued",
-  "quake.felt": "{count} felt",
+  "quake.felt": "{count} signalements",
   "quake.no_earthquakes": "No earthquakes",
   "quake.breadcrumb": "Quake",
   "analog.year": "YEAR",

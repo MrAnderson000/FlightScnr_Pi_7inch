@@ -742,7 +742,7 @@
   "quake.time.h_ago": "{hours} órája",
   "quake.time.d_ago": "{days} napja",
   "quake.tsunami": "Cunami-riasztást adtak ki",
-  "quake.felt": "Érezte: {count} bejelentés",
+  "quake.felt": "{count} bejelentés",
   "quake.no_earthquakes": "Nincs földrengés",
   "quake.breadcrumb": "Földrengés",
   "analog.year": "ÉV",

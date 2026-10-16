@@ -742,7 +742,7 @@
   "quake.time.h_ago": "{hours} u geleden",
   "quake.time.d_ago": "{days} d geleden",
   "quake.tsunami": "Tsunamiwaarschuwing afgegeven",
-  "quake.felt": "{count} gevoeld",
+  "quake.felt": "{count} meldingen",
   "quake.no_earthquakes": "Geen aardbevingen",
   "quake.breadcrumb": "Beving",
   "analog.year": "JAAR",
