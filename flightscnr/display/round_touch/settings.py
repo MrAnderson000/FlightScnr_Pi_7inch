@@ -417,7 +417,7 @@ _defaults = {
     # 100 keeps the chart as painted; lower fades it toward parchment, like VFR.
     "seamap_opacity": 100,
     # Clockwise UI + touch mapping: 0, 90, 180, 270 (physical panel mount).
-    "display_rotation": 0,
+    "display_rotation": 180,
     # ATC audio (LiveATC via mpv) — non-secret prefs.
     "atc_enabled": False,
     "atc_airport": "",
@@ -542,7 +542,7 @@ def _normalize_display_rotation(deg) -> int:
     try:
         value = int(deg) % 360
     except (TypeError, ValueError):
-        return 0
+        return 180
     if value not in (0, 90, 180, 270):
         value = round(value / 90) * 90 % 360
     return value
@@ -554,7 +554,7 @@ def _env_display_rotation() -> int:
 
         return _normalize_display_rotation(DISPLAY_ROTATION)
     except ImportError:
-        return _normalize_display_rotation(os.environ.get("DISPLAY_ROTATION", "0"))
+        return _normalize_display_rotation(os.environ.get("DISPLAY_ROTATION", "180"))
 
 
 def _snap_min_height(value) -> int:
@@ -948,7 +948,7 @@ def _load():
         migrated = True
     else:
         state["display_rotation"] = _normalize_display_rotation(
-            state.get("display_rotation", 0)
+            state.get("display_rotation", 180)
         )
     if "show_wildfires" not in data:
         state["show_wildfires"] = _default_show_wildfires()
@@ -1333,7 +1333,7 @@ def _settings_snapshot(state: dict) -> tuple:
         state.get("map_style"),
         state.get("vfr_map_opacity"),
         state.get("seamap_opacity"),
-        _normalize_display_rotation(state.get("display_rotation", 0)),
+        _normalize_display_rotation(state.get("display_rotation", 180)),
         # ATC is edited from the web portal in a separate process — include it
         # so disk changes retune the device UI without an explicit reload flag.
         bool(state.get("atc_enabled", False)),
@@ -2645,7 +2645,7 @@ def scale_label() -> str:
 
 
 def display_rotation() -> int:
-    return _normalize_display_rotation(_state.get("display_rotation", 0))
+    return _normalize_display_rotation(_state.get("display_rotation", 180))
 
 
 def set_display_rotation(degrees) -> int:
