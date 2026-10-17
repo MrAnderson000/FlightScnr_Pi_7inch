@@ -284,121 +284,20 @@ resolve_boot_paths() {
 }
 
 configure_display_720x720() {
-    # Waveshare 4″ DSI (C) is natively 720×720. Persist that mode for labwc
-    # (kanshi) and X11 (dispsetup.sh). Never abort install if outputs differ.
-    local mode="720x720"
-    local kanshi_body
-    local dispsetup
-    local applied=0
-
-    log_step "Display resolution ${mode}"
-
-    kanshi_body=$(cat <<EOF
-# Managed by FlightScnr install-pi.sh — round Waveshare DSI panel.
-profile {
-    output DSI-1 enable mode ${mode} position 0,0 scale 1
-}
-profile {
-    output DSI-2 enable mode ${mode} position 0,0 scale 1
-}
-EOF
-)
-
-    # Per-user kanshi for the install owner.
-    if [ -n "${REPO_OWNER_HOME:-}" ]; then
-        mkdir -p "${REPO_OWNER_HOME}/.config/kanshi"
-        if printf '%s\n' "$kanshi_body" > "${REPO_OWNER_HOME}/.config/kanshi/config"; then
-            chown -R "$REPO_OWNER:" "${REPO_OWNER_HOME}/.config/kanshi" 2>/dev/null || true
-            applied=1
-        else
-            log_warn "Could not write ${REPO_OWNER_HOME}/.config/kanshi/config (continuing)"
-        fi
-    fi
-
-    # System fallback used by greeter / first boot before a user config exists.
-    if mkdir -p /etc/xdg/kanshi 2>/dev/null; then
-        if printf '%s\n' "$kanshi_body" > /etc/xdg/kanshi/config 2>/dev/null; then
-            applied=1
-        fi
-    fi
-
-    # Raspberry Pi Desktop X11 screen layout hook (Screen Configuration / arandr).
-    dispsetup="/usr/share/dispsetup.sh"
-    if cat > "$dispsetup" <<EOF
-#!/bin/sh
-# Managed by FlightScnr install-pi.sh — force round panel mode on X11.
-for out in DSI-1 DSI-2; do
-    xrandr --output "\$out" --mode ${mode} --primary 2>/dev/null || true
-done
-exit 0
-EOF
-    then
-        chmod 0755 "$dispsetup" 2>/dev/null || true
-        applied=1
-    else
-        log_warn "Could not write $dispsetup (continuing)"
-    fi
-
-    # Best-effort apply to a live session (no failure if compositor is down).
-    if command -v wlr-randr >/dev/null 2>&1; then
-        for sock_dir in /run/user/*; do
-            [ -d "$sock_dir" ] || continue
-            for wd in wayland-1 wayland-0; do
-                [ -S "${sock_dir}/${wd}" ] || continue
-                for out in DSI-1 DSI-2; do
-                    env XDG_RUNTIME_DIR="$sock_dir" WAYLAND_DISPLAY="$wd" \
-                        wlr-randr --output "$out" --mode "$mode" >/dev/null 2>&1 || true
-                done
-            done
-        done
-    fi
-    if [ -n "${DISPLAY:-}" ] || [ -S /tmp/.X11-unix/X0 ]; then
-        for out in DSI-1 DSI-2; do
-            DISPLAY="${DISPLAY:-:0}" XAUTHORITY="${XAUTHORITY:-${REPO_OWNER_HOME}/.Xauthority}" \
-                run_with_timeout 5 10 xrandr --output "$out" --mode "$mode" --primary \
-                >/dev/null 2>&1 || true
-        done
-    fi
-
-    if [ "$applied" -eq 1 ]; then
-        log_ok "Configured ${mode} via kanshi + dispsetup.sh (DSI-1/DSI-2 when present)"
-    else
-        log_warn "Could not persist ${mode} display config (continuing)"
-    fi
+    # Pi 5 + 7″ 1080×1080 HDMI panel: display is already configured via
+    # config.txt hdmi_timings and cmdline.txt video=HDMI-A-1:1080x1080@60.
+    # Do not force 720×720 DSI modes.
+    log_step "Display resolution"
+    log_ok "Skipped — 7″ 1080×1080 HDMI panel already configured via config.txt / cmdline.txt (no DSI 720×720 force)"
+    return 0
 }
 
 install_gpio_fan() {
-    # Kernel gpio-fan: on/off on the control wire when SoC hits the threshold.
-    # Matches the official Pi case-fan wiring (GPIO 14). temp is millidegrees C.
-    # Writes must not abort portal OTA under set -e (vfat remount-ro / full boot
-    # partition) — same class of guard as Bluetooth panel edits (5fdb6d4).
-    local fan_line="dtoverlay=gpio-fan,gpiopin=14,temp=60000"
-
+    # Pi 5 + Waveshare Pi5-Active-Cooler-A on the dedicated 4-pin fan header.
+    # Never enable the stock gpio-fan overlay on GPIO 14.
     log_step "Case fan (gpio-fan overlay)"
-
-    resolve_boot_paths
-    if [ -z "$BOOT_CONFIG" ]; then
-        log_warn "Could not find config.txt — skipped gpio-fan overlay"
-        return 0
-    fi
-    if [ ! -w "$BOOT_CONFIG" ]; then
-        log_warn "config.txt not writable ($BOOT_CONFIG) — skipped gpio-fan overlay"
-        return 0
-    fi
-
-    if grep -qE '^\s*dtoverlay=gpio-fan' "$BOOT_CONFIG"; then
-        if sed -i "s|^[[:space:]]*dtoverlay=gpio-fan.*|${fan_line}|" "$BOOT_CONFIG"; then
-            log_ok "Updated gpio-fan overlay ($BOOT_CONFIG): GPIO 14 @ 60°C"
-        else
-            log_warn "Could not update gpio-fan overlay in $BOOT_CONFIG (continuing)"
-        fi
-    else
-        if printf '\n# FlightScnr Pi — case fan (GPIO 14 @ 60°C)\n%s\n' "$fan_line" >> "$BOOT_CONFIG"; then
-            log_ok "Installed gpio-fan overlay ($BOOT_CONFIG): GPIO 14 @ 60°C"
-        else
-            log_warn "Could not write gpio-fan overlay to $BOOT_CONFIG (continuing)"
-        fi
-    fi
+    log_ok "Skipped — Waveshare Pi5-Active-Cooler-A on dedicated 4-pin header (no GPIO 14 overlay)"
+    return 0
 }
 
 install_boot_splash() {
@@ -1634,7 +1533,7 @@ cmd_install() {
     else
         echo "  Reboot:    starts automatically (systemctl is-enabled flightscnr)"
     fi
-    echo "  Fan:       gpio-fan on GPIO 14 @ 60°C (reboot once if this install just added it)"
+    echo "  Fan:       Waveshare Pi5-Active-Cooler-A on 4-pin header (no gpio-fan overlay)"
     echo "  Update:    bash $REPO_ROOT/install-pi.sh update"
     echo ""
 }
