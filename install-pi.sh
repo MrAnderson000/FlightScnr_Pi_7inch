@@ -6,12 +6,12 @@
 # real multi-touch (pinch-to-zoom), then auto-reboot when needed. Users should
 # not need raspi-config. SDL_VIDEODRIVER=x11 stays as today.
 #
-# First install (after clone):
-#   git clone https://github.com/yashmulgaonkar/FlightScnr_Pi.git ~/FlightScnr_Pi
+# First install (after clone of this fork's hardware branch):
+#   git clone -b pi5-7inch-hdmi https://github.com/MrAnderson000/FlightScnr_Pi_7inch.git ~/FlightScnr_Pi
 #   cd ~/FlightScnr_Pi
 #   sudo bash install-pi.sh
 #
-# Update (sync origin/main + re-sync, skips apt for speed):
+# Update (sync origin/pi5-7inch-hdmi + re-sync, skips apt for speed):
 #   bash ~/FlightScnr_Pi/install-pi.sh update
 #
 # After an OTA from builds that still ran install in-process (pre-re-exec),
@@ -1352,14 +1352,14 @@ prepare_repo_for_pull() {
     done
 }
 
-# Fleet OTA: fetch GitHub main and check it out. Works from a branch, a missing
-# upstream, or detached HEAD (tag/commit checkout, e.g. 2026.8.10.2 / 7381c3f).
-# `git pull --ff-only` cannot do this — with no branch it errors, and
-# `reset --hard origin/main` while detached stays detached.
-# -B recreates local main at origin/main and leaves HEAD on the branch.
-# -f overwrites the worktree so leftover mode dirt cannot block the switch.
+# This fork's update replaces the worktree with origin/pi5-7inch-hdmi.
+# main stays the last promoted known-good copy (repair-ota.sh checks that out).
+# `git pull --ff-only` cannot do this from a detached HEAD.
+# -B leaves HEAD on the branch. -f overwrites leftover mode dirt.
 sync_to_origin_main() {
-    log_step "Syncing to origin/main"
+    local update_branch="pi5-7inch-hdmi"
+
+    log_step "Syncing to origin/${update_branch}"
     # 10 minutes is enough for --tags on slow Wi-Fi; a hang is worse than retry.
     #
     # --force, because a tag the device already holds under a different object
@@ -1368,17 +1368,16 @@ sync_to_origin_main() {
     # never mentioned tags. Any device whose tag upstream later re-points was
     # stranded on the OTA path.
     #
-    # The fallback drops tags entirely so a tag can never block the code. The
-    # sync needs origin/main; release tags are read separately, with
-    # `ls-remote` against the remote, so nothing here depends on local tags.
+    # The fallback drops tags entirely so a tag can never block the code.
+    # Release tags are read separately, with `ls-remote` against the remote.
     run_repo_git --timeout 30 600 fetch --force --tags origin \
         || run_repo_git --timeout 30 600 fetch origin
-    if ! run_repo_git show-ref --verify --quiet refs/remotes/origin/main; then
-        echo "origin/main not found after fetch" >&2
+    if ! run_repo_git show-ref --verify --quiet "refs/remotes/origin/${update_branch}"; then
+        echo "origin/${update_branch} not found after fetch" >&2
         return 1
     fi
-    run_repo_git checkout -f -B main origin/main
-    log_ok "Synced to origin/main ($(run_repo_git log --oneline -1 2>/dev/null || true))"
+    run_repo_git checkout -f -B "$update_branch" "origin/${update_branch}"
+    log_ok "Synced to origin/${update_branch} ($(run_repo_git log --oneline -1 2>/dev/null || true))"
 }
 
 start_service() {
@@ -1588,7 +1587,7 @@ Usage:
   sudo bash install-pi.sh [install] [--no-start] [--skip-apt]
       First install or full re-sync (includes apt packages)
   bash install-pi.sh update [--no-start]
-      fetch origin/main, check it out (reattaches detached HEAD), re-sync, restart
+      fetch origin/pi5-7inch-hdmi, check it out (reattaches detached HEAD), re-sync, restart
       --no-start  skip service restart (portal update schedules it after status write)
 
 If apt fails with MergeList / "no Package: header" (corrupt index cache):

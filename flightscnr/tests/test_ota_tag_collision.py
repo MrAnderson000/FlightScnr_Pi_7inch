@@ -90,6 +90,7 @@ class OtaTagCollisionTests(unittest.TestCase):
         (work / "VERSION").write_text("1.0.0.1\n")
         _git(work, "commit", "-aqm", "release")
         _git(work, "push", "-q", "origin", "main")
+        _git(work, "push", "-q", "origin", "HEAD:pi5-7inch-hdmi")
         self.expected = _git(work, "rev-parse", "HEAD")
 
         self.addCleanup(self._tmp.cleanup)
@@ -131,7 +132,7 @@ sync_to_origin_main
     def test_the_device_is_left_on_a_branch(self):
         """A detached HEAD would break the next update."""
         self._run_sync()
-        self.assertEqual(_git(self.repo, "rev-parse", "--abbrev-ref", "HEAD"), "main")
+        self.assertEqual(_git(self.repo, "rev-parse", "--abbrev-ref", "HEAD"), "pi5-7inch-hdmi")
 
     def test_the_new_code_is_in_the_worktree(self):
         self._run_sync()
@@ -147,6 +148,10 @@ sync_to_origin_main
         """Tolerating tag trouble must not tolerate a dead network."""
         _git(self.repo, "remote", "set-url", "origin", "/nonexistent/repo.git")
         _git(self.repo, "update-ref", "-d", "refs/remotes/origin/main")
+        subprocess.run(
+            ["git", "-C", str(self.repo), "update-ref", "-d", "refs/remotes/origin/pi5-7inch-hdmi"],
+            env=GIT_ENV, capture_output=True, text=True,
+        )
         self.assertNotEqual(self._run_sync().returncode, 0)
 
 

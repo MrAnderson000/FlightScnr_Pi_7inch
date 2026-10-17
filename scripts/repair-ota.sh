@@ -9,8 +9,9 @@
 #
 # It also reattaches detached HEAD (checkout of a tag/commit such as
 # 2026.8.10.2 / 7381c3f). `git pull` has no branch in that state; this script
-# fetches origin and runs `checkout -f -B main origin/main` so HEAD is on main
-# before install-pi.sh update runs — even an old on-disk installer can proceed.
+# fetches origin and runs `checkout -f -B main origin/main` so HEAD is on main,
+# then runs install --skip-apt. It does not run `install-pi.sh update`, because
+# update on this fork checks out pi5-7inch-hdmi and would leave main again.
 #
 # It also repairs a corrupted git object database — the classic Pi power-loss
 # signatures: "error: object file .git/objects/... is empty" followed by
@@ -26,7 +27,7 @@
 #
 # This script does NOT need a successful pull first — fetch it from GitHub:
 #
-#   curl -fsSL https://raw.githubusercontent.com/yashmulgaonkar/FlightScnr_Pi/main/scripts/repair-ota.sh | bash
+#   bash ~/FlightScnr_Pi/scripts/repair-ota.sh
 #
 # Options:
 #   --hard   git fetch + checkout -f -B main origin/main (discards ALL local
@@ -36,7 +37,7 @@
 #
 set -euo pipefail
 
-GITHUB_URL="https://github.com/yashmulgaonkar/FlightScnr_Pi.git"
+GITHUB_URL="https://github.com/MrAnderson000/FlightScnr_Pi_7inch.git"
 
 HARD=0
 REPO_ROOT="${FLIGHTSCNR_REPO:-}"
@@ -308,9 +309,9 @@ fi
 echo "Before: $(run_git status -sb | tr '\n' ' ')"
 echo "VERSION=$(tr -d '[:space:]' <VERSION 2>/dev/null || echo '?')"
 
-# Same sync as install-pi.sh update: fetch + checkout -B leaves HEAD on main.
-# reset --hard while detached would move the commit and stay detached, so the
-# following `git pull` still fails. -f discards local checkout edits (kiosk).
+# Fetch + checkout -B leaves HEAD on main. Do not call `install-pi.sh update`:
+# on this fork that checks out pi5-7inch-hdmi and would undo the repair.
+# install --skip-apt applies the main tree without fetching the test branch.
 echo "Syncing to origin/main…"
 run_git fetch --tags origin || repair_object_db
 if ! run_git show-ref --verify --quiet refs/remotes/origin/main; then
@@ -321,11 +322,11 @@ run_git checkout -f -B main origin/main
 
 echo "After sync: $(run_git status -sb | tr '\n' ' ')"
 
-echo "Running install-pi.sh update…"
+echo "Running install-pi.sh install --skip-apt…"
 if [ "$(id -u)" -eq 0 ]; then
-    bash "$REPO_ROOT/install-pi.sh" update
+    bash "$REPO_ROOT/install-pi.sh" install --skip-apt
 else
-    sudo bash "$REPO_ROOT/install-pi.sh" update
+    sudo bash "$REPO_ROOT/install-pi.sh" install --skip-apt
 fi
 
 clear_stale_update_banner

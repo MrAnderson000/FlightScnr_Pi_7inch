@@ -1,5 +1,7 @@
 # FlightScnr Pi
 
+> **This fork** is the Raspberry Pi 5 build for the Waveshare 7″ 1080×1080 HDMI panel. Upstream still describes the 4″ DSI panel. Install, update, and repair commands below are for https://github.com/MrAnderson000/FlightScnr_Pi_7inch on branch `pi5-7inch-hdmi`.
+
 A round **4″ touch display** flight and marine tracker for Raspberry Pi. Dark radar UI, animated sweep, map tiles, gesture navigation, LiveATC audio, and a local **web portal** for setup — no SSH required for day-to-day use. Modeled after [FlightScnr](https://github.com/yashmulgaonkar/FlightScnr).
 
 **Display:** [Waveshare 4inch DSI LCD (C)](https://www.waveshare.com/4inch-dsi-lcd-c.htm?&aff_id=108718) (720×720) and the newer [4-DSI-TOUCH-C](https://www.waveshare.com/4-dsi-touch-c.htm?&aff_id=108718) (same resolution; different bezel, fits the same housing). The new panel needs a different firmware overlay or it stays black — see [Quick install](#quick-install) and [#207](https://github.com/yashmulgaonkar/FlightScnr_Pi/issues/207). On **4-DSI-TOUCH-C**, the display **power cable is mandatory** (do not rely on DSI power alone).
@@ -249,38 +251,33 @@ Also included: scrollable **list pickers** for on-device settings, portal **Rout
 **Stuck on `2026.8.5.x` (Update fails silently):** an older install step flipped permissions on `scripts/release.sh`, which used to block the update pull. That file is now frozen upstream, so pressing **Update Now** once more in the portal should work — no terminal needed. If it still fails (other local edits, corrupted git store), run on the Pi:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/yashmulgaonkar/FlightScnr_Pi/main/scripts/repair-ota.sh | bash
+bash ~/FlightScnr_Pi/scripts/repair-ota.sh
 ```
 
-Use `| bash -s -- --hard` only if other local edits also block the pull.
+That replaces the Pi checkout with this fork's `main` and re-runs the installer. It does not pull `pi5-7inch-hdmi`. Use `--hard` only if other local edits also block the checkout.
 
 ---
 
 ## Quick install
 
 1. Gather parts and assemble the unit — see [Hardware](https://github.com/yashmulgaonkar/FlightScnr_Pi/wiki/Hardware) and [Hardware Assembly](https://github.com/yashmulgaonkar/FlightScnr_Pi/wiki/Hardware-Assembly).
-2. Flash Raspberry Pi OS (64-bit, with desktop), then enable the matching Waveshare panel overlay in boot `config.txt` (`/boot/firmware/config.txt` on Bookworm+):
-
-```text
-dtoverlay=vc4-kms-v3d
-```
-
-| Panel | Product page | Overlay (DSI1 / typical Pi 4) |
-| ----- | ------------ | ----------------------------- |
-| **4inch DSI LCD (C)** (original) | [waveshare.com/4inch-dsi-lcd-c.htm](https://www.waveshare.com/4inch-dsi-lcd-c.htm?&aff_id=108718) | `dtoverlay=vc4-kms-dsi-waveshare-panel,4_0_inchC` |
-| **4-DSI-TOUCH-C** (newer look; same housing) | [waveshare.com/4-dsi-touch-c.htm](https://www.waveshare.com/4-dsi-touch-c.htm?&aff_id=108718) | `dtoverlay=vc4-kms-dsi-waveshare-panel-v2,4_0_inch_c` |
-
-Use only one panel overlay. On **4-DSI-TOUCH-C**, connect the display **power cable** — it is required (the panel will not run from the DSI ribbon alone). On Pi 5 / CM, if the screen stays blank, try the DSI0 form of the same overlay (see [Software Setup](https://github.com/yashmulgaonkar/FlightScnr_Pi/wiki/Software-Setup)). Thanks to [@Matzebhv](https://github.com/Matzebhv) for the newer-panel overlay in [#207](https://github.com/yashmulgaonkar/FlightScnr_Pi/issues/207).
+2. Flash Raspberry Pi OS (64-bit, with desktop). This fork uses the Waveshare 7″ 1080×1080 HDMI panel on HDMI-A-1. Put the panel timings in `config.txt` and end `cmdline.txt` with `video=HDMI-A-1:1080x1080@60`. Do not add a 4″ DSI panel overlay, and do not add `dtoverlay=gpio-fan`. Cooling is the Waveshare Pi5-Active-Cooler-A on the Pi 5 4-pin fan header.
 
 Then:
 
 ```bash
-git clone https://github.com/yashmulgaonkar/FlightScnr_Pi.git ~/FlightScnr_Pi
+git clone -b pi5-7inch-hdmi https://github.com/MrAnderson000/FlightScnr_Pi_7inch.git ~/FlightScnr_Pi
 cd ~/FlightScnr_Pi
 sudo bash install-pi.sh
 ```
 
-The installer forces the desktop to **X11** (needed for pinch-to-zoom) and **reboots automatically** when that switch is pending. It also enables the enclosure cooling fan via the kernel `gpio-fan` overlay (**GPIO 14**, on at **60°C**), disables Wi‑Fi power save for kiosk reliability, and enables Bluetooth for speaker pairing.
+The installer forces the desktop to **X11** (needed for pinch-to-zoom) and **reboots automatically** when that switch is pending. It does not enable a GPIO fan. It also disables Wi‑Fi power save for kiosk reliability and enables Bluetooth for speaker pairing.
+
+Later updates replace the Pi's files with `pi5-7inch-hdmi`:
+
+```bash
+bash ~/FlightScnr_Pi/install-pi.sh update
+```
 
 3. Open the web portal at `http://<hostname>.local` and add API keys.
 

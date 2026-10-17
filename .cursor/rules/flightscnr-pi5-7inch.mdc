@@ -31,7 +31,7 @@ Git workflow
 - main on the user’s fork is the known-good reference. Never commit experimental work directly to main.
 - Working branch for the current hardware bring-up: pi5-7inch-hdmi.
 - After a branch is fully tested and working on the Pi, promote it to main.
-- When the original author releases updates: create a new branch from current known-good main, review upstream diff, port only relevant changes, test on the Pi, then promote.
+- When the original author releases updates: review the upstream diff, port only relevant changes onto the long-lived `pi5-7inch-hdmi` branch, test on the Pi, then promote that branch to main. Update always follows `pi5-7inch-hdmi`. Repair always returns to `main`.
 - The Pi always clones only from the user’s fork. Never leave a clone of the original repo on the Pi.
 
 Process rules
