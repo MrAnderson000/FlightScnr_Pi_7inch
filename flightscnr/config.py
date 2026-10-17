@@ -376,7 +376,7 @@ def web_portal_url(hostname: str = "") -> str:
 # --- Display & units ---
 DISPLAY_WIDTH = int(os.environ.get("DISPLAY_WIDTH", "1080"))
 DISPLAY_HEIGHT = int(os.environ.get("DISPLAY_HEIGHT", "1080"))
-DISPLAY_ROTATION = int(os.environ.get("DISPLAY_ROTATION", "90")) % 360
+DISPLAY_ROTATION = int(os.environ.get("DISPLAY_ROTATION", "0")) % 360
 if DISPLAY_ROTATION not in (0, 90, 180, 270):
     DISPLAY_ROTATION = round(DISPLAY_ROTATION / 90) * 90 % 360
 DISPLAY_FULLSCREEN = _bool(os.environ.get("DISPLAY_FULLSCREEN", "True"))
