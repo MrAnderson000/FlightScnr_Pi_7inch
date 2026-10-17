@@ -1,0 +1,41 @@
+---
+description: FlightScnr Pi 5 + 7″ 1080×1080 HDMI project rules
+alwaysApply: true
+---
+
+Project: FlightScnr Pi — Pi 5 + 7″ 1080×1080 HDMI
+
+User is on a Mac. Always give Mac-specific Terminal, Finder, and keyboard instructions.
+
+Reference repo (never modify): https://github.com/yashmulgaonkar/FlightScnr_Pi
+User fork (all permanent changes): https://github.com/MrAnderson000/FlightScnr_Pi_7inch
+
+Hardware (do not change these facts)
+- Raspberry Pi 5 4 GB
+- Waveshare Pi5-Active-Cooler-A on the dedicated 4-pin Pi 5 fan header. No dtoverlay. Never enable the stock FlightScnr gpio-fan overlay on GPIO 14.
+- Official Raspberry Pi 5 27 W USB-C power supply to the Pi. Display power + touch share one Pi USB port.
+- Waveshare 7inch 1080×1080 LCD (SKU 33686). HDMI video + USB-C capacitive touch, native 1080×1080. Not the 4″ DSI panel the reference project was written for.
+- Pi 5 mounts on the back of the panel using the included direct male-to-male HDMI-to-micro-HDMI and USB-to-Type-C adapters. Only external cable is the official 27 W power lead.
+- Use the micro-HDMI port nearest the USB-C power connector (HDMI-A-1 / HDMI0).
+- Display setup reference: https://docs.waveshare.com/7inch_1080x1080_LCD/User-Guide-Rpi
+- After flashing Pi OS, config.txt (under [all]) must contain:
+  hdmi_force_hotplug=1
+  hdmi_group=2
+  hdmi_mode=87
+  hdmi_pixel_freq_limit=200000000
+  hdmi_timings=1080 0 80 20 80 1080 0 10 10 14 0 0 0 60 0 84210000 0
+- cmdline.txt must end with (space-separated): video=HDMI-A-1:1080x1080@60
+
+Git workflow
+- All hardware-specific changes are made on branches of the user’s fork only.
+- main on the user’s fork is the known-good reference. Never commit experimental work directly to main.
+- Working branch for the current hardware bring-up: pi5-7inch-hdmi.
+- After a branch is fully tested and working on the Pi, promote it to main.
+- When the original author releases updates: create a new branch from current known-good main, review upstream diff, port only relevant changes, test on the Pi, then promote.
+- The Pi always clones only from the user’s fork. Never leave a clone of the original repo on the Pi.
+
+Process rules
+- Always plan first, state the exact changes, red-team the plan if it touches install scripts, display config, or fan/power, then wait for explicit “go” before making any edit, commit, or Pi command.
+- Prefer direct edits to the user’s GitHub fork when possible.
+- After any installer or config change, verify on the Pi before considering it done.
+- Keep the reference repo as the source of truth for upstream behavior; only diverge where hardware requires it.
